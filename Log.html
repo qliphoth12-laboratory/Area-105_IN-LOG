@@ -46,6 +46,107 @@
         linear-gradient(to bottom, var(--page-bg-1), var(--page-bg-2));
     }
 
+    /* ===== Loading Screen Overlay (copied from profile.html; only text changed) ===== */
+    .loading-screen {
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transform: translateY(0);
+      opacity: 1;
+      transition:
+        transform 2.5s cubic-bezier(0.19, 1, 0.22, 1),
+        opacity 0.4s ease-out;
+    }
+
+    .loading-screen.hide {
+      transform: translateY(-105%);
+      pointer-events: none;
+    }
+
+    .loading-logo {
+      width: 156px;
+      height: 156px;
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      background: #111827;
+    }
+
+    .loading-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .loading-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: #111827;
+      margin-bottom: 0.35rem;
+    }
+
+    .loading-sub {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.26em;
+      color: #9ca3af;
+    }
+
+    .loading-bar {
+      width: 96px;
+      height: 2px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+      position: relative;
+      margin-top: 1.75rem;
+    }
+
+    .loading-bar::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, #f3f3f3, #868686, #ffffff);
+      transform: translateX(-100%);
+      animation: loadingBarSlide 1.2s infinite;
+    }
+
+    @keyframes loadingBarSlide {
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(100%);
+      }
+    }
+
+    .loading-dim {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      background: rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(20px) brightness(0.2);
+      -webkit-backdrop-filter: blur(20px) brightness(0.2);
+      opacity: 1;
+      transition: opacity 1.0s ease-out;
+    }
+
+    .loading-dim.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+
     /* ===== Fixed top nav ===== */
     .top-nav {
       height: 50px;
@@ -153,7 +254,7 @@
       inset: 0;
       background-image: var(--logoUrl);
       background-repeat: no-repeat;
-      background-position: 50% calc(50% + (var(--metaH) / 2));
+      background-position: 50% calc(60% + (var(--metaH) / 2));
       background-size: min(480px, 65vw);
       opacity: 0.05;
       filter: grayscale(100%);
@@ -204,15 +305,6 @@
       letter-spacing: .10em;
       text-transform: uppercase;
       white-space: nowrap;
-    }
-
-    .toolbar-left .a105-mini {
-      width: 18px;
-      height: 18px;
-      border-radius: 6px;
-      object-fit: contain;
-      opacity: .92;
-      filter: drop-shadow(0 2px 10px rgba(0, 0, 0, .25));
     }
 
     .toolbar-mid {
@@ -274,7 +366,6 @@
 
     /* ===== Scrollable paper body ===== */
     .paper-body {
-
       color: var(--paper-ink);
       position: relative;
       z-index: 1;
@@ -362,10 +453,7 @@
       background: rgba(15, 23, 42, .10);
     }
 
-    /* ===== Multi-line redaction (IMPORTANT FIX) =====
-       We no longer use a single .redact-bar.
-       JS will create multiple .redact-bar segments (one per visual line box).
-    */
+    /* ===== Multi-line redaction ===== */
     .redact-wrap {
       position: relative;
       display: inline-block;
@@ -403,7 +491,6 @@
       border-radius: 2px;
     }
 
-    /* Reveal mode */
     .log.reveal .redact-bar {
       transform: scaleX(0);
       transition: transform var(--dur, 1100ms) cubic-bezier(.22, .85, .18, 1);
@@ -452,6 +539,19 @@
 </head>
 
 <body>
+
+  <!-- Loading Screen Overlay (from profile.html) -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-logo">
+      <img src="https://cdn.jsdelivr.net/gh/qliphoth12-laboratory/Area-105@main/images/ui/Logo_A105.png"
+        alt="Area-105 logo">
+    </div>
+    <div class="loading-title">AREA-105</div>
+    <div class="loading-sub">INTERVIEW LOG</div>
+    <div class="loading-bar"></div>
+  </div>
+  <div id="loadingDim" class="loading-dim"></div>
+
   <header class="top-nav">
     <div class="container-xl d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-3">
@@ -475,7 +575,6 @@
 
         <div class="panel-toolbar">
           <div class="toolbar-left">
-
             <span id="docIdText">Interview Log</span>
           </div>
 
@@ -505,189 +604,39 @@
   </section>
 
   <script>
-  
-    const interviewData = {
-      docId: "SAMEKH-72-081",
-      ui: {
-        clearanceText: "LEVEL 2 · RESTRICTED",
-        revealDelayMs: 500,
-        staggerMs: 120,
-        baseDurationMs: 1100
-      },
-      meta: [
-        { label: "Date", value: "March X, 20XX" },
-        { label: "Interviewee", value: "Agent XXXXXX XXXXXX" },
-        { label: "Interviewer", value: "Dr. XXXXX XXXXXX" },
-      ],
+    (function () {
+      const API_BASE = "https://script.google.com/macros/s/AKfycby2eHp1tlysaV7nIHMYH2B_ex8jj4aGSEuA4WNTDvZE6Kh8V_KzaiHveN_BMdQWol11Kw/exec";
+      const INDEX_URL = "index.html"; // ถ้าอยากเปลี่ยนหน้า fallback ค่อยแก้ตรงนี้
 
-      speakerStyles: {
-        "Dr. XXXXX": { pipeColor: "#111827" },
-        "Agent XXXXXX": { pipeColor: "#536292" },
-        "Narration": { pipeColor: "#6b7280" }
-      },
-      log: [
-        { speaker: "Dr. XXXXX", text: "โอเค… ตอนนี้เวลา XXXXX เป็นการสอบสวนเร่งด่วน และผมก็มีประเด็นต้องถาม ดังนั้นผมจะเข้าเรื่องเลยนะ" },
-        { speaker: "Agent XXXXXX", text: "เอเจนต์ XXXXXXXXXX… หน่วยรักษาความปลอดภัยปีกเหนือครับ" },
-        { speaker: "Dr. XXXXX", text: "คุณเป็นคนแจ้งเหตุรายงานผิดปกติของ “ประตูทางเชื่อม Sector-3” ใช่ไหม?" },
-        { speaker: "Agent XXXXXX", text: "ครับ" },
-        { speaker: "Dr. XXXXX", text: "รายงานบอกว่าประตูมีคราบคล้ายกับซากอุปกรณ์ขนส่งของสถานีเสียหายจากแรงกระแทก และมีร่องรอยคล้ายเลือด… คุณเป็นคนพบคนแรกใช่ไหม?" },
-        { speaker: "Agent XXXXXX", text: "ครับ ผมเป็นคนเดินไปตรวจเจอแล้วรายงานขึ้นไปเอง" },
-        { speaker: "Dr. XXXXX", text: "แล้ว… ก่อนถึงจุดนั้น คุณไปอยู่ตรงนั้นได้ยังไง พอจะเล่าเหตุการณ์เริ่มตั้งแต่ต้นได้ไหม?" },
-        { speaker: "Agent XXXXXX", text: "ก็… ผมเดินตรวจตราตามปกติ แล้วเห็นเชือกสีดำ ๆ ลากยาวไปตามพื้นทางเดินห้องโถงของ Sector-3 ปีกเหนือครับ" },
-        { speaker: "Dr. XXXXX", text: "พอจะระบุเวลาได้ไหมว่าตอนนั้นกี่โมง?" },
-        { speaker: "Agent XXXXXX", text: "ประมาณ… XXXX ครับ… น่าจะไม่เกินสิบ นาทีหลังเปลี่ยนเวร เพราะผมจำได้ว่าผมเพิ่งมาเข้ากะพอดี" },
-        { speaker: "Narration", text: "[ Agent XXXXXX เงียบไปสักพัก ]" },
-        { speaker: "Dr. XXXXX", text: "ไม่เป็นไร ค่อย ๆ เล่า ทีละช่วงก็ได้… แล้วถัดจากนั้นเกิดอะไรขึ้นต่อ?" },
-        { speaker: "Agent XXXXXX", text: "มันมีเสียงครับ… เสียงแบบผิดปกติ โครกผิดปกติ เหมือนเสียงไม้กับหินขูดไปหมด เสียงแกร๊ก เสียงไฟ เสียงปีก…" }
-      ]
-    };
+      const loadingEl = document.getElementById("loadingScreen");
+      const loadingDim = document.getElementById("loadingDim");
 
-    (function init() {
-      // meta
-      document.getElementById("docIdText").textContent = `Interview Log ${interviewData.docId}`;
-      document.getElementById("secLabel").textContent = interviewData.ui.clearanceText;
-
-      const metaMount = document.getElementById("metaMount");
-      metaMount.innerHTML = "";
-
-      (interviewData.meta || []).forEach(({ label, value }) => {
-        const row = document.createElement("div");
-        row.innerHTML = `<strong>${escapeHtml(label)}:</strong> <span>${escapeHtml(value)}</span>`;
-        metaMount.appendChild(row);
-      });
-      const metaEl = document.querySelector(".meta");
-      document.querySelector(".interview-card")
-        .style.setProperty("--metaH", metaEl.offsetHeight + "px");
-
-      const mount = document.getElementById("chatMount");
-      const logRoot = document.getElementById("logRoot");
-      const paperBody = document.getElementById("paperBody");
-      mount.innerHTML = "";
-
-      // render rows
-      interviewData.log.forEach((item, idx) => {
-        const row = document.createElement("div");
-        row.className = "chat-row";
-
-        // set pipe color per speaker
-        const st = interviewData.speakerStyles[item.speaker] || {};
-        row.style.setProperty("--pipeColor", st.pipeColor || "#0f172a");
-
-        const speaker = document.createElement("div");
-        speaker.className = "speaker";
-        speaker.innerHTML = `<span class="pipe">|</span><span>${escapeHtml(item.speaker)}</span>`;
-
-        const message = document.createElement("div");
-        message.className = "message";
-
-        // redaction wrapper (multi-line)
-        const wrap = document.createElement("span");
-        wrap.className = "redact-wrap";
-
-        const textEl = document.createElement("span");
-        textEl.className = "redact-text";
-        textEl.textContent = item.text;
-
-        const bars = document.createElement("span");
-        bars.className = "redact-bars";
-
-        // store sequencing on wrap so we can stagger per message
-        wrap.dataset.seq = String(idx);
-
-        wrap.appendChild(textEl);
-        wrap.appendChild(bars);
-
-        message.appendChild(wrap);
-
-        row.appendChild(speaker);
-        row.appendChild(message);
-        mount.appendChild(row);
-      });
-      let revealStarted = false;
-      // build multi-line bars after layout
-      rebuildAllRedactions();
-
-      // reveal after delay
-      setTimeout(() => {
-        revealStarted = true;
-        logRoot.classList.add("reveal");
-      }, Number(interviewData.ui.revealDelayMs || 5000));
-
-      // Rebuild on resize (wrap changes line breaks)
-      let resizeT = null;
-      window.addEventListener("resize", () => {
-        if (revealStarted) return;
-        clearTimeout(resizeT);
-        resizeT = setTimeout(rebuildAllRedactions, 80);
-      });
-
-      // If the scroll container width changes (e.g., scrollbar appears), rebuild on first scroll too
-      let didScrollRebuild = false;
-      paperBody.addEventListener("scroll", () => {
-        if (revealStarted) return;
-        rebuildAllRedactions();
-      }, { passive: true });
-      function rebuildAllRedactions() {
-        const wraps = document.querySelectorAll(".redact-wrap");
-        wraps.forEach(w => rebuildRedactionForWrap(w));
-      }
-
-      function rebuildRedactionForWrap(wrap) {
-        const textEl = wrap.querySelector(".redact-text");
-        const barsHost = wrap.querySelector(".redact-bars");
-        if (!textEl || !barsHost) return;
-
-        // clear old bars
-        barsHost.innerHTML = "";
-
-        // Use Range.getClientRects() to get actual wrapped line boxes
-        const range = document.createRange();
-        range.selectNodeContents(textEl);
-        const rects = Array.from(range.getClientRects());
-
-        // If empty (rare), fallback to bounding box
-        if (rects.length === 0) {
-          const r = textEl.getBoundingClientRect();
-          const host = wrap.getBoundingClientRect();
-          rects.push(r);
-          // normalize later
-        }
-
-        const hostRect = wrap.getBoundingClientRect();
-
-        // Visual tuning
-        const padX = 0;            // left/right padding for bar (px)
-        const barTopOffset = 2;     // nudge down (px)
-        const barHeight = 18;       // fixed height (px) close to your screenshot line
-        const radius = 2;
-
-        const seq = Number(wrap.dataset.seq || "0");
-        const delay = (interviewData.ui.staggerMs * seq);
-        const dur = interviewData.ui.baseDurationMs + Math.floor(seq * 8);
-
-        rects.forEach((r) => {
-          const left = (r.left - hostRect.left) - padX;
-          const top = (r.top - hostRect.top) + barTopOffset;
-          const width = (r.width) + (padX * 2);
-
-          // Skip tiny rects (sometimes artifacts)
-          if (width < 6 || r.height < 6) return;
-
-          const bar = document.createElement("span");
-          bar.className = "redact-bar";
-          bar.style.left = left + "px";
-          bar.style.top = top + "px";
-          bar.style.width = width + "px";
-          bar.style.height = barHeight + "px";
-          bar.style.borderRadius = radius + "px";
-
-          // each message staggers as before
-          bar.style.setProperty("--delay", delay + "ms");
-          bar.style.setProperty("--dur", dur + "ms");
-
-          barsHost.appendChild(bar);
+      const startFadeInContent = () => {
+        // หน้านี้ไม่ได้ใช้ .fade-in-up ก็ไม่เป็นไร (คงฟังก์ชันไว้ตาม profile.html)
+        const animatedEls = document.querySelectorAll(".fade-in-up");
+        animatedEls.forEach((el, index) => {
+          el.style.transitionDelay = (index * 80) + "ms";
+          el.classList.add("show");
         });
-      }
+      };
+
+      const hideLoading = () => {
+        if (!loadingEl) {
+          startFadeInContent();
+          return;
+        }
+        setTimeout(() => {
+          loadingEl.classList.add("hide");
+          setTimeout(() => {
+            if (loadingDim) {
+              loadingDim.classList.add("hide");
+            }
+            setTimeout(() => {
+              startFadeInContent();
+            }, 100);
+          }, 800);
+        }, 500);
+      };
 
       function escapeHtml(s) {
         return String(s)
@@ -697,6 +646,193 @@
           .replaceAll('"', "&quot;")
           .replaceAll("'", "&#039;");
       }
+
+      function normalizePayload(payload) {
+        // รองรับ 2 แบบ:
+        // 1) { ok:true, status:"FOUND", data:{...interviewData...} }
+        // 2) { ...interviewData... } (ยิง JSON ตรง)
+        if (payload && payload.ok === true && payload.status === "FOUND" && payload.data) return payload.data;
+        return payload;
+      }
+
+      function isValidInterviewData(d) {
+        return !!(d && typeof d === "object" && Array.isArray(d.log));
+      }
+
+      function renderInterview(interviewData) {
+        // ===== Header / meta =====
+        document.getElementById("docIdText").textContent = `Interview Log ${interviewData.docId || ""}`.trim();
+        document.getElementById("secLabel").textContent = (interviewData.ui && interviewData.ui.clearanceText) ? interviewData.ui.clearanceText : "LEVEL 2 · RESTRICTED";
+
+        const metaMount = document.getElementById("metaMount");
+        metaMount.innerHTML = "";
+
+        (interviewData.meta || []).forEach(({ label, value }) => {
+          const row = document.createElement("div");
+          row.innerHTML = `<strong>${escapeHtml(label)}:</strong> <span>${escapeHtml(value)}</span>`;
+          metaMount.appendChild(row);
+        });
+
+        const metaEl = document.querySelector(".meta");
+        document.querySelector(".interview-card")
+          .style.setProperty("--metaH", metaEl.offsetHeight + "px");
+
+        // ===== Render chat rows =====
+        const mount = document.getElementById("chatMount");
+        const logRoot = document.getElementById("logRoot");
+        const paperBody = document.getElementById("paperBody");
+
+        mount.innerHTML = "";
+        logRoot.classList.remove("reveal");
+
+        (interviewData.log || []).forEach((item, idx) => {
+          const row = document.createElement("div");
+          row.className = "chat-row";
+
+          const st = (interviewData.speakerStyles && interviewData.speakerStyles[item.speaker]) || {};
+          row.style.setProperty("--pipeColor", st.pipeColor || "#0f172a");
+
+          const speaker = document.createElement("div");
+          speaker.className = "speaker";
+          speaker.innerHTML = `<span class="pipe">|</span><span>${escapeHtml(item.speaker)}</span>`;
+
+          const message = document.createElement("div");
+          message.className = "message";
+
+          const wrap = document.createElement("span");
+          wrap.className = "redact-wrap";
+          wrap.dataset.seq = String(idx);
+
+          const textEl = document.createElement("span");
+          textEl.className = "redact-text";
+          textEl.textContent = item.text;
+
+          const bars = document.createElement("span");
+          bars.className = "redact-bars";
+
+          wrap.appendChild(textEl);
+          wrap.appendChild(bars);
+          message.appendChild(wrap);
+
+          row.appendChild(speaker);
+          row.appendChild(message);
+          mount.appendChild(row);
+        });
+
+        // ===== Redaction building + reveal sequencing =====
+        let revealStarted = false;
+
+        function rebuildAllRedactions() {
+          const wraps = document.querySelectorAll(".redact-wrap");
+          wraps.forEach(w => rebuildRedactionForWrap(w));
+        }
+
+        function rebuildRedactionForWrap(wrap) {
+          const textEl = wrap.querySelector(".redact-text");
+          const barsHost = wrap.querySelector(".redact-bars");
+          if (!textEl || !barsHost) return;
+
+          barsHost.innerHTML = "";
+
+          const range = document.createRange();
+          range.selectNodeContents(textEl);
+          const rects = Array.from(range.getClientRects());
+
+          if (rects.length === 0) {
+            rects.push(textEl.getBoundingClientRect());
+          }
+
+          const hostRect = wrap.getBoundingClientRect();
+
+          const padX = 0;
+          const barTopOffset = 2;
+          const barHeight = 18;
+          const radius = 2;
+
+          const seq = Number(wrap.dataset.seq || "0");
+          const staggerMs = Number((interviewData.ui && interviewData.ui.staggerMs) || 120);
+          const baseDurationMs = Number((interviewData.ui && interviewData.ui.baseDurationMs) || 1100);
+
+          const delay = (staggerMs * seq);
+          const dur = baseDurationMs + Math.floor(seq * 8);
+
+          rects.forEach((r) => {
+            const left = (r.left - hostRect.left) - padX;
+            const top = (r.top - hostRect.top) + barTopOffset;
+            const width = (r.width) + (padX * 2);
+
+            if (width < 6 || r.height < 6) return;
+
+            const bar = document.createElement("span");
+            bar.className = "redact-bar";
+            bar.style.left = left + "px";
+            bar.style.top = top + "px";
+            bar.style.width = width + "px";
+            bar.style.height = barHeight + "px";
+            bar.style.borderRadius = radius + "px";
+
+            bar.style.setProperty("--delay", delay + "ms");
+            bar.style.setProperty("--dur", dur + "ms");
+
+            barsHost.appendChild(bar);
+          });
+        }
+
+        rebuildAllRedactions();
+
+        const revealDelayMs = Number((interviewData.ui && interviewData.ui.revealDelayMs) || 500);
+        setTimeout(() => {
+          revealStarted = true;
+          logRoot.classList.add("reveal");
+        }, revealDelayMs);
+
+        let resizeT = null;
+        window.addEventListener("resize", () => {
+          if (revealStarted) return;
+          clearTimeout(resizeT);
+          resizeT = setTimeout(rebuildAllRedactions, 80);
+        });
+
+        paperBody.addEventListener("scroll", () => {
+          if (revealStarted) return;
+          rebuildAllRedactions();
+        }, { passive: true });
+      }
+
+      // ===== Boot: read id -> fetch -> render -> hide loading =====
+      document.addEventListener("DOMContentLoaded", () => {
+        const params = new URLSearchParams(window.location.search);
+        const id = (params.get("id") || "").trim();
+
+        if (!id) {
+          window.location.replace(INDEX_URL);
+          return;
+        }
+
+        fetch(`${API_BASE}?id=${encodeURIComponent(id)}`)
+          .then(res => res.json())
+          .then(payload => {
+            const data = normalizePayload(payload);
+
+            if (!isValidInterviewData(data)) {
+              window.location.replace(INDEX_URL);
+              return;
+            }
+
+            // ถ้า backend ไม่ส่ง docId มา แต่เราได้ id จาก URL ก็เติมให้
+            if (!data.docId) data.docId = id;
+
+            renderInterview(data);
+            document.title = `Interview Log · ${data.docId || id} · Area-105`;
+          })
+          .catch(err => {
+            console.error(err);
+            window.location.replace(INDEX_URL);
+          })
+          .finally(() => {
+            hideLoading();
+          });
+      });
     })();
   </script>
 

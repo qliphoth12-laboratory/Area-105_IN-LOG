@@ -614,10 +614,10 @@
             let overlayActive = false;
 
 
-            const API_BASE = "https://script.google.com/macros/s/AKfycbz-DS0yA5iorJMVJ8xmgXxPqvy-it2BgLk3xRLMm_RHETOL4lJTHrmAgDqvT0AOnOUuWQ/exec";
+            const API_BASE = "https://script.google.com/macros/s/AKfycby2eHp1tlysaV7nIHMYH2B_ex8jj4aGSEuA4WNTDvZE6Kh8V_KzaiHveN_BMdQWol11Kw/exec";
 
 
-            const PROFILE_URL = "profile.html";
+            const PROFILE_URL = "Log.html";
 
             function setLoading(isLoading) {
                 if (!submitBtn) return;
@@ -769,14 +769,14 @@
                     return;
                 }
 
-                // 2) ตรวจรูปแบบ A105-XX-0000
+                
                 const pattern = /^[A-Z]\d{3}L-(IV|IN|EX|OB|TR|BR)-[A-Z]{2}-\d{3}$/i;
 
 
                 if (!pattern.test(value)) {
                     showError(
                         "รูปแบบ Log ID ที่ระบุไม่ถูกต้อง หรือไม่ตรงกับมาตรฐานที่ใช้ใน Area-105 " +
-                        "กรุณาตรวจสอบอีกครั้งว่าใช้รูปแบบ A105-XX-YY-0000 (เช่น A105-INC-SM-0024) แล้วลองใหม่อีกครั้ง."
+                        "กรุณาตรวจสอบอีกครั้งว่าใช้รูปแบบ A105-XX-YY-000 (เช่น A105-INC-SM-024) แล้วลองใหม่อีกครั้ง."
                     );
                     input.focus();
                     return;
