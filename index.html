@@ -567,9 +567,9 @@
                                 Log ID
                             </label>
                             <input type="text" id="personnelId" name="personnelId" class="form-control form-control-id"
-                                autocomplete="off" placeholder="เช่น A105L-IN-XX-001">
+                                autocomplete="off" placeholder="เช่น A105L-IN-XX-0001-001">
                             <div class="hint-text">
-                                รูปแบบมาตรฐาน: <code>A105L-IN-XX-001</code> |
+                                รูปแบบมาตรฐาน: <code>A105L-IN-XX-0001-001</code> |
                                 <span>Site</span>-<span>Log_Type</span>-<span>SCP_Code</span>-<span>Record_No</span>
 
                             </div>
@@ -698,40 +698,52 @@
             }
 
             function formatLogId(raw) {
-                // keep only A-Z0-9 uppercase
+                // เก็บเฉพาะ A-Z 0-9 และทำเป็นตัวใหญ่
                 const s = String(raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 
-                // prefix 5 + type 2 + code 2 + digits 3 = 12
-                const trimmed = s.slice(0, 12);
+                // จำกัดความยาวรวม (prefix 5 + type 2 + code 2 + digits4 4 + digits3 3 = 16)
+                const trimmed = s.slice(0, 16);
 
+                // แบ่ง prefix 5 ตัว + remainder
                 const prefix = trimmed.slice(0, 5);
                 const rest = trimmed.slice(5);
 
-                let type = "", code = "", digits = "";
+                // ดึงตามลำดับ: type(2 letters) + code(2 letters) + digits4(4 numbers) + digits3(3 numbers)
+                let type = "";
+                let code = "";
+                let digits4 = "";
+                let digits3 = "";
 
                 for (const ch of rest) {
                     if (/[A-Z]/.test(ch)) {
                         if (type.length < 2) type += ch;
                         else if (code.length < 2) code += ch;
                     } else if (/[0-9]/.test(ch)) {
-                        if (digits.length < 3) digits += ch;
+                        if (digits4.length < 4) digits4 += ch;
+                        else if (digits3.length < 3) digits3 += ch;
                     }
-                    if (type.length === 2 && code.length === 2 && digits.length === 3) break;
+
+                    if (type.length === 2 && code.length === 2 && digits4.length === 4 && digits3.length === 3) break;
                 }
 
+                // สร้างผลลัพธ์แบบ auto "-"
                 let out = prefix;
 
-                if (prefix.length === 5 && (type.length || code.length || digits.length)) out += "-";
+                if (prefix.length === 5 && (type.length || code.length || digits4.length || digits3.length)) out += "-";
                 out += type;
 
-                if (type.length && (code.length || digits.length)) out += "-";
+                if (type.length && (code.length || digits4.length || digits3.length)) out += "-";
                 out += code;
 
-                if (code.length && digits.length) out += "-";
-                out += digits;
+                if (code.length && (digits4.length || digits3.length)) out += "-";
+                out += digits4;
+
+                if (digits4.length && digits3.length) out += "-";
+                out += digits3;
 
                 return out;
             }
+
 
             /**
              * Count how many [A-Z0-9] chars exist in a string BEFORE a given index.
@@ -847,12 +859,9 @@
                 // 3) General input formatting (desktop + mobile)
                 input.addEventListener("input", () => {
                     if (isComposing) return;
-
-                    // Do NOT force caret to end; preserve caret
                     applyFormatPreserveCaret(input);
                 });
 
-                // optional: format once on blur (helps some mobile keyboards)
                 input.addEventListener("blur", () => {
                     if (isComposing) return;
                     applyFormatPreserveCaret(input);
@@ -882,13 +891,13 @@
                 }
 
 
-                const pattern = /^[A-Z]\d{3}L-(IV|IN|EX|OB|TR|BR)-[A-Z]{2}-\d{3}$/i;
+                const pattern = /^[A-Z]\d{3}L-(IV|IN|EX|OB|TR|BR)-[A-Z]{2}-\d{4}-\d{3}$/i;
 
 
                 if (!pattern.test(value)) {
                     showError(
                         "รูปแบบ Log ID ที่ระบุไม่ถูกต้อง หรือไม่ตรงกับมาตรฐานที่ใช้ใน Area-105 " +
-                        "กรุณาตรวจสอบอีกครั้งว่าใช้รูปแบบ A105-XX-YY-000 (เช่น A105-INC-SM-024) แล้วลองใหม่อีกครั้ง."
+                        "กรุณาตรวจสอบอีกครั้งว่าใช้รูปแบบ A105-XX-YY--0000-000 (เช่น A105-IN-SM-0072-024) แล้วลองใหม่อีกครั้ง."
                     );
                     input.focus();
                     return;
