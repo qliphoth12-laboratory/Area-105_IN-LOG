@@ -738,12 +738,29 @@
                 return out;
             }
 
-  
+
+            let isComposing = false;
+
+            input.addEventListener("compositionstart", () => { isComposing = true; });
+            input.addEventListener("compositionend", () => {
+                isComposing = false;
+
+              
+                const formatted = formatLogId(input.value);
+                if (input.value !== formatted) input.value = formatted;
+            });
+
             input.addEventListener("input", () => {
+                if (isComposing) return;
+
                 const formatted = formatLogId(input.value);
                 if (input.value !== formatted) {
                     input.value = formatted;
-                    input.setSelectionRange(input.value.length, input.value.length);
+
+                  
+                    try {
+                        input.setSelectionRange(input.value.length, input.value.length);
+                    } catch (_) { }
                 }
             });
 
@@ -769,7 +786,7 @@
                     return;
                 }
 
-                
+
                 const pattern = /^[A-Z]\d{3}L-(IV|IN|EX|OB|TR|BR)-[A-Z]{2}-\d{3}$/i;
 
 
