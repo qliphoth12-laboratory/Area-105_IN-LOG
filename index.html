@@ -698,20 +698,16 @@
             }
 
             function formatLogId(raw) {
-                // เก็บเฉพาะ A-Z 0-9 และทำเป็นตัวใหญ่
-                const s = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+                // keep only A-Z0-9 uppercase
+                const s = String(raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 
-                // จำกัดความยาวรวม (A105L 5 + type 2 + code 2 + digits 3 = 12)
+                // prefix 5 + type 2 + code 2 + digits 3 = 12
                 const trimmed = s.slice(0, 12);
 
-                // แบ่ง prefix 5 ตัว + remainder
                 const prefix = trimmed.slice(0, 5);
                 const rest = trimmed.slice(5);
 
-                // ดึงตามลำดับ: type(2 letters) + code(2 letters) + digits(3 numbers)
-                let type = "";
-                let code = "";
-                let digits = "";
+                let type = "", code = "", digits = "";
 
                 for (const ch of rest) {
                     if (/[A-Z]/.test(ch)) {
@@ -723,7 +719,6 @@
                     if (type.length === 2 && code.length === 2 && digits.length === 3) break;
                 }
 
-                // สร้างผลลัพธ์แบบ auto "-"
                 let out = prefix;
 
                 if (prefix.length === 5 && (type.length || code.length || digits.length)) out += "-";
@@ -738,32 +733,132 @@
                 return out;
             }
 
+            /**
+             * Count how many [A-Z0-9] chars exist in a string BEFORE a given index.
+             * (Works even when raw has '-' or other characters.)
+             */
+            function countKeptBefore(str, index) {
+                const head = String(str).slice(0, Math.max(0, index));
+                const kept = head.toUpperCase().match(/[A-Z0-9]/g);
+                return kept ? kept.length : 0;
+            }
 
-            let isComposing = false;
+            /**
+             * Find caret position in formatted string such that
+             * there are `keptCount` kept chars before it.
+             */
+            function caretFromKeptCount(formatted, keptCount) {
+                if (keptCount <= 0) return 0;
+                let seen = 0;
+                for (let i = 0; i < formatted.length; i++) {
+                    if (/[A-Z0-9]/.test(formatted[i])) {
+                        seen++;
+                        if (seen >= keptCount) return i + 1;
+                    }
+                }
+                return formatted.length;
+            }
 
-            input.addEventListener("compositionstart", () => { isComposing = true; });
-            input.addEventListener("compositionend", () => {
-                isComposing = false;
+            /**
+             * Apply format while preserving caret/selection (collapsed caret is common case).
+             */
+            function applyFormatPreserveCaret(input) {
+                const raw = input.value;
+                const selStart = input.selectionStart ?? raw.length;
+                const selEnd = input.selectionEnd ?? raw.length;
 
-              
-                const formatted = formatLogId(input.value);
-                if (input.value !== formatted) input.value = formatted;
-            });
+                // map selection endpoints by kept chars count
+                const keptStart = countKeptBefore(raw, selStart);
+                const keptEnd = countKeptBefore(raw, selEnd);
 
-            input.addEventListener("input", () => {
-                if (isComposing) return;
+                const formatted = formatLogId(raw);
 
-                const formatted = formatLogId(input.value);
-                if (input.value !== formatted) {
+                if (formatted !== raw) {
                     input.value = formatted;
 
-                  
+                    // restore selection based on kept counts
+                    const newStart = caretFromKeptCount(formatted, keptStart);
+                    const newEnd = caretFromKeptCount(formatted, keptEnd);
+
                     try {
-                        input.setSelectionRange(input.value.length, input.value.length);
+                        input.setSelectionRange(newStart, newEnd);
                     } catch (_) { }
                 }
-            });
+            }
 
+            /**
+             * Smart backspace: if caret is just after '-', remove it and keep caret stable.
+             */
+            function handleDelimiterBackspace(e, input) {
+                if (e.key !== "Backspace") return false;
+                if (e.ctrlKey || e.metaKey || e.altKey) return false;
+
+                const v = input.value;
+                const start = input.selectionStart ?? 0;
+                const end = input.selectionEnd ?? 0;
+
+                // only when no selection (collapsed caret)
+                if (start !== end) return false;
+
+                // if caret is right after '-' => delete '-' manually
+                if (start > 0 && v[start - 1] === "-") {
+                    e.preventDefault();
+                    const newVal = v.slice(0, start - 1) + v.slice(start);
+                    input.value = newVal;
+                    try { input.setSelectionRange(start - 1, start - 1); } catch (_) { }
+                    // after removing '-', reformat + preserve caret
+                    applyFormatPreserveCaret(input);
+                    return true;
+                }
+
+                return false;
+            }
+
+            /**
+             * Bind formatter to an <input>.
+             * - IME-safe (composition)
+             * - mobile-safe (defer after compositionend)
+             * - caret-preserving
+             */
+            function bindLogIdAutoFormat(input) {
+                let isComposing = false;
+
+                // 1) IME guard
+                input.addEventListener("compositionstart", () => {
+                    isComposing = true;
+                });
+
+                input.addEventListener("compositionend", () => {
+                    isComposing = false;
+
+                    // IMPORTANT: defer 1 tick for mobile keyboards that emit input after compositionend
+                    setTimeout(() => {
+                        // if user already changed something else, still safe because we preserve caret
+                        applyFormatPreserveCaret(input);
+                    }, 0);
+                });
+
+                // 2) Delimiter backspace fix (desktop)
+                input.addEventListener("keydown", (e) => {
+                    if (isComposing) return;
+                    handleDelimiterBackspace(e, input);
+                });
+
+                // 3) General input formatting (desktop + mobile)
+                input.addEventListener("input", () => {
+                    if (isComposing) return;
+
+                    // Do NOT force caret to end; preserve caret
+                    applyFormatPreserveCaret(input);
+                });
+
+                // optional: format once on blur (helps some mobile keyboards)
+                input.addEventListener("blur", () => {
+                    if (isComposing) return;
+                    applyFormatPreserveCaret(input);
+                });
+            }
+            bindLogIdAutoFormat(input);
 
 
             form.addEventListener("submit", function (e) {

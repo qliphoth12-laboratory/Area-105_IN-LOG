@@ -794,7 +794,7 @@
         const id = (params.get("id") || "").trim();
 
         if (!id) {
-          // window.location.replace(INDEX_URL);
+          window.location.replace(INDEX_URL);
           return;
         }
 
@@ -804,7 +804,7 @@
             const data = normalizePayload(payload);
 
             if (!isValidInterviewData(data)) {
-              // window.location.replace(INDEX_URL);
+              window.location.replace(INDEX_URL);
               return;
             }
 
