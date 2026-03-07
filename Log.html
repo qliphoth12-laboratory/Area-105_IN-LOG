@@ -532,7 +532,7 @@
         alt="Area-105 logo">
     </div>
     <div class="loading-title">AREA-105</div>
-    <div class="loading-sub">INTERVIEW LOG</div>
+    <div class="loading-sub">Record LOG</div>
     <div class="loading-bar"></div>
   </div>
   <div id="loadingDim" class="loading-dim"></div>
@@ -564,10 +564,10 @@
 
         <div class="panel-toolbar">
           <div class="toolbar-left">
-            <span id="docIdText">Interview Log</span>
+            <span id="docIdText">Record Log</span>
           </div>
 
-          <div class="toolbar-mid" id="toolbarTitle">&lt;&lt;&lt; INTERVIEW LOG &gt;&gt;&gt;</div>
+          <div class="toolbar-mid" id="toolbarTitle">&lt;&lt;&lt;  &gt;&gt;&gt;</div>
 
           <div class="toolbar-right">
             <span id="secLabel">LEVEL 2 · RESTRICTED</span>
@@ -650,7 +650,7 @@
 
       function renderInterview(interviewData) {
         // ===== Header / meta =====
-        document.getElementById("docIdText").textContent = `Interview Log ${interviewData.docId || ""}`.trim();
+        document.getElementById("docIdText").textContent = `${interviewData.docId || ""}`.trim();
         document.getElementById("secLabel").textContent = (interviewData.ui && interviewData.ui.clearanceText) ? interviewData.ui.clearanceText : "LEVEL 2 · RESTRICTED";
 
         const metaMount = document.getElementById("metaMount");
@@ -812,7 +812,7 @@
             if (!data.docId) data.docId = id;
 
             renderInterview(data);
-            document.title = `Interview Log · ${data.docId || id} · Area-105`;
+            document.title = `${data.docId || id} · Area-105`;
           })
           .catch(err => {
             console.error(err);
